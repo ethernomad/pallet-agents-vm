@@ -32,7 +32,7 @@ extern crate alloc;
 type BalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
-#[derive(Encode, Decode, TypeInfo)]
+#[derive(Debug, PartialEq, Encode, Decode, TypeInfo)]
 pub struct Node {
     name: String,
     uri: String,

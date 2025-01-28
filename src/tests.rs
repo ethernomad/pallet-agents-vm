@@ -131,21 +131,26 @@ fn register() {
             RuntimeOrigin::root(),
             deposit_amount
         ));
-        let name = "Node1";
-        let uri = "https://node.network:443";
+        let name = "Node1".to_string();
+        let uri = "https://node.network:443".to_string();
         assert_err!(
             AgentsVM::register(RuntimeOrigin::signed(3), name.to_string(), uri.to_string()),
             DispatchError::Other("Can't transfer value.")
         );
         assert_ok!(AgentsVM::register(
             RuntimeOrigin::signed(1),
-            name.to_string(),
-            uri.to_string(),
+            name.clone(),
+            uri.clone(),
         ));
+        let accounts = Accounts::<Test>::get();
+        assert_eq!(accounts.contains(&1), true);
+        assert_eq!(Deposit::<Test>::get(1), deposit_amount);
         assert_err!(
             AgentsVM::register(RuntimeOrigin::signed(1), name.to_string(), uri.to_string(),),
             Error::<Test>::NodeAlreadyRegistered
         );
+        let node = AccountNode::<Test>::get(1);
+        assert_eq!(node, Some(Node { name, uri }));
     });
 }
 
@@ -171,6 +176,8 @@ fn deregister() {
         assert_ok!(AgentsVM::deregister(RuntimeOrigin::signed(1),));
         let accounts = Accounts::<Test>::get();
         assert_eq!(accounts.contains(&1), false);
+        assert_eq!(Deposit::<Test>::get(1), 0);
+        assert_eq!(AccountNode::<Test>::get(1), None);
     });
 }
 
@@ -186,6 +193,7 @@ fn reward() {
             AgentsVM::reward(RuntimeOrigin::root(), 1, reward_amount),
             Error::<Test>::NodeNotRegistered
         );
+        assert_ok!(AgentsVM::set_deposit_amount(RuntimeOrigin::root(), 10));
         let name = "Node1";
         let uri = "https://node.network:443";
         assert_ok!(AgentsVM::register(
@@ -193,7 +201,9 @@ fn reward() {
             name.to_string(),
             uri.to_string(),
         ));
+        assert_eq!(Deposit::<Test>::get(1), 10);
         assert_ok!(AgentsVM::reward(RuntimeOrigin::root(), 1, reward_amount));
+        assert_eq!(Deposit::<Test>::get(1), 18);
     });
 }
 
@@ -209,6 +219,7 @@ fn slash() {
             AgentsVM::slash(RuntimeOrigin::root(), 1, slash_amount),
             Error::<Test>::NodeNotRegistered
         );
+        assert_ok!(AgentsVM::set_deposit_amount(RuntimeOrigin::root(), 10));
         let name = "Node1";
         let uri = "https://node.network:443";
         assert_ok!(AgentsVM::register(
@@ -216,6 +227,8 @@ fn slash() {
             name.to_string(),
             uri.to_string(),
         ));
+        assert_eq!(Deposit::<Test>::get(1), 10);
         assert_ok!(AgentsVM::slash(RuntimeOrigin::root(), 1, slash_amount));
+        assert_eq!(Deposit::<Test>::get(1), 2);
     });
 }
